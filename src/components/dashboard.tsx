@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 import { CopilotSidebar, useAgentContext } from "@copilotkit/react-core/v2";
 import {
   Area,
@@ -82,6 +82,19 @@ const sentimentColors: Record<string, string> = {
   Frustrated: "#f97316",
   Blocked: "#dc2626",
 };
+
+function subscribeToClientReady(onStoreChange: () => void) {
+  const frame = requestAnimationFrame(onStoreChange);
+  return () => cancelAnimationFrame(frame);
+}
+
+function getClientReadySnapshot() {
+  return true;
+}
+
+function getServerReadySnapshot() {
+  return false;
+}
 
 function minutesLabel(minutes: number) {
   if (minutes < 0) {
@@ -224,6 +237,24 @@ function FilterButton({
     >
       {label}
     </button>
+  );
+}
+
+function ChartShell({
+  ready,
+  children,
+}: {
+  ready: boolean;
+  children: ReactNode;
+}) {
+  if (ready) {
+    return children;
+  }
+
+  return (
+    <div className="flex h-full items-center justify-center rounded-lg bg-slate-50 text-sm font-medium text-slate-400">
+      Loading chart
+    </div>
   );
 }
 
@@ -372,6 +403,11 @@ export function Dashboard() {
   const [severity, setSeverity] = useState<SeverityFilter>("All");
   const [query, setQuery] = useState("");
   const [selectedTicketId, setSelectedTicketId] = useState(getHighRiskTickets(1)[0]!.id);
+  const chartsReady = useSyncExternalStore(
+    subscribeToClientReady,
+    getClientReadySnapshot,
+    getServerReadySnapshot,
+  );
 
   const filteredTickets = useMemo(() => {
     return tickets
@@ -540,34 +576,36 @@ export function Dashboard() {
                   </div>
                 </div>
                 <div className="mt-4 h-72">
-                  <ResponsiveContainer height="100%" width="100%">
-                    <AreaChart data={volumeTrend}>
-                      <defs>
-                        <linearGradient id="newTickets" x1="0" x2="0" y1="0" y2="1">
-                          <stop offset="5%" stopColor="#0d9488" stopOpacity={0.26} />
-                          <stop offset="95%" stopColor="#0d9488" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="day" stroke="#64748b" tickLine={false} />
-                      <YAxis stroke="#64748b" tickLine={false} width={32} />
-                      <Tooltip />
-                      <Area
-                        dataKey="new"
-                        fill="url(#newTickets)"
-                        stroke="#0d9488"
-                        strokeWidth={2}
-                        type="monotone"
-                      />
-                      <Area
-                        dataKey="resolved"
-                        fill="transparent"
-                        stroke="#475569"
-                        strokeWidth={2}
-                        type="monotone"
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
+                  <ChartShell ready={chartsReady}>
+                    <ResponsiveContainer height="100%" width="100%">
+                      <AreaChart data={volumeTrend}>
+                        <defs>
+                          <linearGradient id="newTickets" x1="0" x2="0" y1="0" y2="1">
+                            <stop offset="5%" stopColor="#0d9488" stopOpacity={0.26} />
+                            <stop offset="95%" stopColor="#0d9488" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
+                        <XAxis dataKey="day" stroke="#64748b" tickLine={false} />
+                        <YAxis stroke="#64748b" tickLine={false} width={32} />
+                        <Tooltip />
+                        <Area
+                          dataKey="new"
+                          fill="url(#newTickets)"
+                          stroke="#0d9488"
+                          strokeWidth={2}
+                          type="monotone"
+                        />
+                        <Area
+                          dataKey="resolved"
+                          fill="transparent"
+                          stroke="#475569"
+                          strokeWidth={2}
+                          type="monotone"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </ChartShell>
                 </div>
               </div>
 
@@ -581,21 +619,23 @@ export function Dashboard() {
                     <AlertTriangle size={20} className="text-amber-600" />
                   </div>
                   <div className="mt-4 h-56">
-                    <ResponsiveContainer height="100%" width="100%">
-                      <BarChart data={slaRiskByArea} layout="vertical" margin={{ left: 12 }}>
-                        <CartesianGrid horizontal={false} stroke="#e2e8f0" strokeDasharray="3 3" />
-                        <XAxis hide type="number" />
-                        <YAxis
-                          dataKey="area"
-                          stroke="#64748b"
-                          tickLine={false}
-                          type="category"
-                          width={92}
-                        />
-                        <Tooltip />
-                        <Bar dataKey="risk" fill="#f59e0b" radius={[0, 6, 6, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
+                    <ChartShell ready={chartsReady}>
+                      <ResponsiveContainer height="100%" width="100%">
+                        <BarChart data={slaRiskByArea} layout="vertical" margin={{ left: 12 }}>
+                          <CartesianGrid horizontal={false} stroke="#e2e8f0" strokeDasharray="3 3" />
+                          <XAxis hide type="number" />
+                          <YAxis
+                            dataKey="area"
+                            stroke="#64748b"
+                            tickLine={false}
+                            type="category"
+                            width={92}
+                          />
+                          <Tooltip />
+                          <Bar dataKey="risk" fill="#f59e0b" radius={[0, 6, 6, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </ChartShell>
                   </div>
                 </div>
 
@@ -608,27 +648,29 @@ export function Dashboard() {
                     <MessageSquareText size={20} className="text-teal-700" />
                   </div>
                   <div className="mt-4 h-56">
-                    <ResponsiveContainer height="100%" width="100%">
-                      <PieChart>
-                        <Pie
-                          cx="50%"
-                          cy="50%"
-                          data={sentimentMix}
-                          dataKey="count"
-                          innerRadius={48}
-                          outerRadius={78}
-                          paddingAngle={3}
-                        >
-                          {sentimentMix.map((entry) => (
-                            <Cell
-                              fill={sentimentColors[entry.sentiment]}
-                              key={entry.sentiment}
-                            />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
+                    <ChartShell ready={chartsReady}>
+                      <ResponsiveContainer height="100%" width="100%">
+                        <PieChart>
+                          <Pie
+                            cx="50%"
+                            cy="50%"
+                            data={sentimentMix}
+                            dataKey="count"
+                            innerRadius={48}
+                            outerRadius={78}
+                            paddingAngle={3}
+                          >
+                            {sentimentMix.map((entry) => (
+                              <Cell
+                                fill={sentimentColors[entry.sentiment]}
+                                key={entry.sentiment}
+                              />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </ChartShell>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     {sentimentMix.map((entry) => (

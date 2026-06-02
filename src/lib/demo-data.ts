@@ -282,7 +282,10 @@ function minutesAgo(minutes: number) {
   return new Date(baseTime - minutes * 60_000).toISOString();
 }
 
-function getStatusBySla(slaMinutesRemaining: number, random: () => number) {
+function getStatusBySla(
+  slaMinutesRemaining: number,
+  random: () => number,
+): TicketStatus {
   if (slaMinutesRemaining < -30) {
     return "Escalated";
   }
