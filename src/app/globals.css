@@ -5,6 +5,10 @@
   --foreground: #0f172a;
 }
 
+html {
+  overflow-x: hidden;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -33,4 +37,8 @@ select {
   .contain-panel {
     contain: layout style paint;
   }
+}
+
+cpk-web-inspector {
+  display: none !important;
 }
