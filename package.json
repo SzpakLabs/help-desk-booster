@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint .",
+    "test": "echo \"No tests configured\"",
+    "typecheck": "tsc --noEmit",
+    "check": "bun run typecheck && bun run lint && bun run test && bun run build"
   },
   "dependencies": {
     "@copilotkit/react-core": "^1.59.2",
