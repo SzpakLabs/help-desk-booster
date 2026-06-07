@@ -183,13 +183,11 @@ export async function searchKnowledgeBase(query: string, limit = 4): Promise<Kno
         score,
       })),
     };
-  } catch (error) {
+  } catch {
     const fallback = await keywordSearch(normalized, limit);
     return {
       ...fallback,
-      note: `LangChain vector retrieval failed, so MiniSearch fallback was used: ${
-        error instanceof Error ? error.message : String(error)
-      }`,
+      note: "LangChain vector retrieval failed, so MiniSearch fallback was used. Check OPENAI_API_KEY and OPENAI_EMBEDDING_MODEL.",
     };
   }
 }
