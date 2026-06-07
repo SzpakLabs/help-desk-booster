@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AtlasDesk Help Desk Booster
 
-## Getting Started
+Portfolio-ready demo of an imaginary unicorn help-desk dashboard with seeded ticket data, generated knowledge-base docs, CopilotKit agent UI, and LangChain-backed RAG retrieval.
 
-First, run the development server:
+## Stack
+
+- Next.js App Router, TypeScript strict mode, Tailwind CSS
+- CopilotKit v2 runtime and sidebar UI
+- LangChain `MemoryVectorStore` with OpenAI embeddings for RAG
+- MiniSearch fallback when `OPENAI_API_KEY` is not configured
+- Recharts, lucide-react, deterministic seeded demo data
+
+## Run Locally
 
 ```bash
+npm install
+cp .env.example .env.local
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The dashboard renders without credentials. Copilot responses and vector retrieval need `OPENAI_API_KEY`. Without the key, `/api/knowledge-search` uses MiniSearch fallback so the generated docs remain searchable.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Demo Prompts
 
-## Learn More
+- Which P1 tickets should I handle first?
+- Explain E-4312 and cite the runbook source.
+- Draft a concise customer update for the selected breached SLA ticket.
+- Search the knowledge base for webhook signature mismatch.
+- Summarize exposed ARR and the top error-code patterns.
 
-To learn more about Next.js, take a look at the following resources:
+## GSD + Codex Workflow
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Install GSD locally for this repo:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npx get-shit-done-cc@latest --codex --local
+```
 
-## Deploy on Vercel
+Start Codex from the repo with explicit approval and sandbox settings:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+codex --cd . --sandbox danger-full-access --ask-for-approval never
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Then use the GSD commands from the agent session:
+
+```text
+/gsd:new-project
+/gsd:discuss-phase 1
+/gsd:plan-phase 1
+/gsd:execute-phase 1
+/gsd:verify-work 1
+/gsd:progress
+```
+
+For full unattended automation in an externally sandboxed environment, Codex also exposes:
+
+```bash
+codex --cd . --dangerously-bypass-approvals-and-sandbox
+```
+
+## Key Files
+
+- `src/components/dashboard.tsx` - operational dashboard and Copilot sidebar
+- `src/app/api/copilotkit/route.ts` - CopilotKit runtime and server tools
+- `src/lib/rag.ts` - LangChain vector retrieval and MiniSearch fallback
+- `src/lib/demo-data.ts` - deterministic seeded tickets, agents, customers, and KPIs
+- `docs/knowledge-base/*.md` - generated documentation corpus for RAG
+
+## Deployment Notes
+
+Set `OPENAI_API_KEY` in the hosting environment before publishing the live Copilot demo. For Vercel CLI compatibility, upgrade the local CLI when possible:
+
+```bash
+npm i -g vercel@latest
+```
+
+or:
+
+```bash
+pnpm add -g vercel@latest
+```
